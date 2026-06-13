@@ -1,0 +1,144 @@
+{
+  "name": "Telegram Message Logger",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram",
+        "responseMode": "lastNode",
+        "responseData": "noData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8fa751f5-bf02-45bb-9a76-b05f1803b17a",
+      "name": "Webhook",
+      "webhookId": "5387e22e-7064-4382-89c8-04a4262bf3ba"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1hsDv9DtGKKTYGw8-IiipdiGAdHnJhoUD2VKMm4iteBc",
+          "mode": "list",
+          "cachedResultName": "Telegram Logger",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hsDv9DtGKKTYGw8-IiipdiGAdHnJhoUD2VKMm4iteBc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hsDv9DtGKKTYGw8-IiipdiGAdHnJhoUD2VKMm4iteBc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "User ID": "={{ $json.body.message.from.id }}",
+            "Username": "=\t{{ $json.body.message.from.username || $json.body.message.from.id }}",
+            "Message": "={{ $json.body.message.text }}",
+            "Chat ID": "={{ $json.body.message.chat.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User ID",
+              "displayName": "User ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Username",
+              "displayName": "Username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Chat ID",
+              "displayName": "Chat ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "ce5cfce7-a361-4a3b-80ce-758245f11f83",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "rhjtOOqntnySYR8z",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1628f4cc-b2eb-4f79-94be-d395f0168157",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa555dda3243f347c9222650b19333761b362b0a6aee27052d51327e5374ae7b"
+  },
+  "id": "n6eQkkmie1Eay37N",
+  "tags": []
+}
