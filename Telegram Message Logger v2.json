@@ -1,0 +1,351 @@
+{
+  "name": "Telegram Message Logger",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1hsDv9DtGKKTYGw8-IiipdiGAdHnJhoUD2VKMm4iteBc",
+          "mode": "list",
+          "cachedResultName": "Telegram Logger",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hsDv9DtGKKTYGw8-IiipdiGAdHnJhoUD2VKMm4iteBc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hsDv9DtGKKTYGw8-IiipdiGAdHnJhoUD2VKMm4iteBc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.timestamp}}",
+            "User ID": "={{ $json.user_id }}",
+            "Username": "={{ $json.username }}",
+            "Message": "={{ $json.message }}",
+            "Chat ID": "={{ $json.chat_id }}",
+            "Classification": "={{ $json.classification }}",
+            "Intent": "={{ $json.intent }}",
+            "Sentiment": "={{ $json.sentiment }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "User ID",
+              "displayName": "User ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Username",
+              "displayName": "Username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Chat ID",
+              "displayName": "Chat ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Classification",
+              "displayName": "Classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        640,
+        16
+      ],
+      "id": "ce5cfce7-a361-4a3b-80ce-758245f11f83",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "rhjtOOqntnySYR8z",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResponse = items[0].json;\nconst original = $('Edit Fields').first().json;\n\nconst content = aiResponse.choices?.[0]?.message?.content || \"{}\";\nconst analysis = JSON.parse(content);\n\nreturn [{\n  json: {\n    timestamp: original.original_timestamp,\n    user_id: original.original_user_id,\n    username: original.original_username,\n    message: original.original_message,\n    chat_id: original.original_chat_id,\n    classification: analysis.classification,\n    intent: analysis.intent,\n    sentiment: analysis.sentiment\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        192
+      ],
+      "id": "63001f8b-c96f-43b9-9cc0-24d4c7b5b0fe",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Analyze the message and return ONLY valid JSON in this exact format: {\\\"classification\\\":\\\"Question|Feedback|Spam|Other\\\",\\\"intent\\\":\\\"Appointment|Inquiry|Complaint|Greeting|Other\\\",\\\"sentiment\\\":\\\"Positive|Neutral|Negative\\\"}. Do not explain.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.original_message }}\"\n    }\n  ],\n  \"response_format\": {\n    \"type\": \"json_object\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "372bf638-a458-4f22-b60f-9b7372441612",
+      "name": "HTTP Request",
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "nxxSFR8ipEtfC74Q",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        -128
+      ],
+      "id": "30b0278a-d98f-45f8-86ea-ba189e1aa23a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram",
+        "responseMode": "lastNode",
+        "responseData": "noData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        464,
+        -384
+      ],
+      "id": "8fa751f5-bf02-45bb-9a76-b05f1803b17a",
+      "name": "Webhook",
+      "webhookId": "5387e22e-7064-4382-89c8-04a4262bf3ba",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram",
+        "responseMode": "lastNode",
+        "responseData": "noData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "fad3ed3c-a582-49e3-8379-25eb5dc762fc",
+      "name": "Webhook1",
+      "webhookId": "5f4c38df-8698-427c-96ff-6a58767f4f72"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1baa1c1d-5b3e-4e8b-bd66-f4c16c5fc754",
+              "name": "original_user_id",
+              "value": "={{ $json.body.message.from.id }}",
+              "type": "string"
+            },
+            {
+              "id": "5da03311-9f7f-4e93-85b6-4b4b910d2ab2",
+              "name": "original_username",
+              "value": "={{ $json.body.message.from.first_name || $json.body.message.from.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f501ddf0-ce3e-459f-8a13-863be7b65eaa",
+              "name": "original_message",
+              "value": "={{ $json.body.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "16dbcb4c-aee1-4b51-ae13-8ba8c084ed7f",
+              "name": "original_chat_id",
+              "value": "={{ $json.body.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8d564b77-f027-4695-ba55-e0420d8fc657",
+              "name": "original_timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        16,
+        192
+      ],
+      "id": "c810a20b-d36c-429d-b309-6a47645a245b",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "be133015-facd-4f77-b359-29ef06ee1a94",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa555dda3243f347c9222650b19333761b362b0a6aee27052d51327e5374ae7b"
+  },
+  "nodeGroups": [],
+  "id": "n6eQkkmie1Eay37N",
+  "tags": []
+}
