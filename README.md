@@ -1,49 +1,78 @@
-## Telegram to Google Sheets Logger
+# Telegram AI Logger
 
-An n8n automation workflow that captures messages from a Telegram bot and writes them directly to Google Sheets.
+An AI-powered Telegram message logger built with n8n, OpenAI, and Google Sheets.
 
-## Quick Demo
+## Features
 
-**What happens when someone messages your bot:**
+- Receives Telegram messages
+- Preserves sender and timestamp information
+- Uses OpenAI GPT-4o-mini to analyze messages
+- Classifies messages
+- Detects user intent
+- Performs sentiment analysis
+- Stores structured results in Google Sheets
 
-1. User sends "Hello, I need help with my order"
-2. n8n receives the message via webhook
-3. Google Sheets gets a new row with:
-   - Timestamp
-   - User ID  
-   - Username (or User ID if none exists)
-   - The actual message
-   - Chat ID
+## Workflow
 
-## What This Does
+```text
+Telegram Trigger
+↓
+Edit Fields
+↓
+HTTP Request (OpenAI)
+↓
+Code Node
+↓
+Google Sheets
+```
 
-- Listens for incoming messages via Telegram bot webhook
-- Extracts message text, user ID, username, chat ID, and timestamp
-- Writes each message as a new row in Google Sheets
-- **Handles missing usernames gracefully** using fallback logic (shows user ID instead)
+## AI Output
+
+Example:
+
+```json
+{
+  "classification": "Question",
+  "intent": "Inquiry",
+  "sentiment": "Neutral"
+}
+```
 
 ## Tech Stack
 
-- **n8n** (self-hosted on Railway)
-- **Telegram Bot API**
-- **Google Sheets API**
+- n8n
+- Telegram Bot API
+- OpenAI API
+- JavaScript
+- Google Sheets
 
-## Workflow Structure
+## Versions
 
-<img width="1508" height="930" alt="Untitled" src="https://github.com/user-attachments/assets/9a5417b4-8b0b-4871-88cb-5731697a104d" />
+### v1
+- Basic message classification
 
+### v2
+- Added intent analysis
+- Added sentiment analysis
+- Implemented JSON parsing
+- Improved Google Sheets mapping
 
+## Screenshots
 
-No IF nodes — just a clean, straight pipe with fallback expressions.
+(Add screenshots here)
 
-## Key Expression (The "Smart" Part)
+## Lessons Learned
 
-```javascript
-{{ $json.body.message.from.username || $json.body.message.from.id }}
-```
-the "||" is a fallback to he display the user id if the user has no username
+- Prompt engineering
+- Structured JSON outputs
+- JSON.parse()
+- Data mapping in n8n
+- Using Code nodes
+- Integrating OpenAI with external services
 
+## Future Improvements
 
-
-
-
+- Switch node routing
+- Separate sheets for Questions, Feedback, and Spam
+- Airtable integration
+- Dashboard and analytics
