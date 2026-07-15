@@ -1,0 +1,690 @@
+{
+  "name": "AI Lead Qualification System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "5d388e40-ed76-4c98-a866-f42ac8bfed93",
+      "name": "Webhook",
+      "webhookId": "423626b0-069c-4da3-94c4-efe43642f43a"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    model: \"gpt-4o-mini\",\n    response_format: {\n      type: \"json_object\"\n    },\n    messages: [\n      {\n        role: \"system\",\n        content: `You are an AI lead qualification assistant.\n\nExtract information from the customer's message.\n\nReturn only valid JSON using exactly these field names:\n\n{\n  \"name\": \"\",\n  \"email\": \"\",\n  \"phone\": \"\",\n  \"service\": \"\",\n  \"budget\": \"\",\n  \"urgency\": \"Unknown\",\n  \"lead_quality\": \"Cold\",\n  \"reason\": \"\"\n}\n\nRules:\n- Extract only details explicitly included in the customer's message.\n- Never invent missing information.\n- Keep missing fields as empty strings.\n- lead_quality must be Hot, Warm, or Cold.\n- Return JSON only.`\n      },\n      {\n        role: \"user\",\n        content: $('Webhook').item.json.body.message.text\n      }\n    ]\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        64,
+        0
+      ],
+      "id": "0e8465a2-a07a-4286-89e8-92ae902034d5",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2Bb4VYxZtgazlald",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n\n  const lead = JSON.parse(item.json.choices[0].message.content);\n\n  return {\n    json: {\n      timestamp: new Date().toLocaleString(\"en-PH\", {\n\n  timeZone: \"Asia/Manila\"\n\n}),\n\n      name: lead.name || \"\",\n      email: lead.email || \"\",\n      phone: lead.phone || \"\",\n      service: lead.service || \"\",\n      budget: lead.budget || \"\",\n      urgency: lead.urgency || \"Unknown\",\n      lead_quality: lead.lead_quality || \"Cold\",\n      reason: lead.reason || \"\",\n      status: \"New Lead\"\n    }\n  };\n})"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "476eef93-ea6f-47bc-b91b-450e61a6be0c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lead_quality }}",
+                    "rightValue": "Hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "df93d2fa-ea2c-4cd7-9f91-b39000b200ff"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f3a076ec-7476-4cc6-8f76-01a7a6d60b18",
+                    "leftValue": "={{ $json.lead_quality }}",
+                    "rightValue": "Warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "14187455-956e-4bdc-be8e-ed47a24608c4",
+                    "leftValue": "={{ $json.lead_quality }}",
+                    "rightValue": "Cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "c8fe8703-9614-4852-9463-213a0efc602c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "7530285170",
+        "text": "=🔥 HOT LEAD ALERT\n\n👤 {{$json.name}}\n📧 {{$json.email}}\n📞 {{$json.phone}}\n\n🛠 {{$json.service}}\n\n💰 {{$json.budget}}\n\n⏰ {{$json.urgency}}\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        928,
+        -160
+      ],
+      "id": "2c67f4b0-5f29-469f-bf61-367c5ebb9bf9",
+      "name": "Send a text message",
+      "webhookId": "775a1310-48e6-4d1d-971e-0c2c5def0eb9",
+      "credentials": {
+        "telegramApi": {
+          "id": "5VBJ9jqIP6H6g89i",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs",
+          "mode": "list",
+          "cachedResultName": "AI Lead Qualifications",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hot",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "service": "={{ $json.service }}",
+            "budget": "={{ $json.budget }}",
+            "urgency": "={{ $json.urgency }}",
+            "lead quality": "={{ $json.lead_quality }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead quality",
+              "displayName": "lead quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        720,
+        -160
+      ],
+      "id": "3d0ea183-b647-46e7-9022-bc6f0c9233b9",
+      "name": "Store Hot Leads",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs",
+          "mode": "list",
+          "cachedResultName": "AI Lead Qualifications",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1518794810,
+          "mode": "list",
+          "cachedResultName": "Warm",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit#gid=1518794810"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "service": "={{ $json.service }}",
+            "budget": "={{ $json.budget }}",
+            "urgency": "={{ $json.urgency }}",
+            "lead quality": "={{ $json.lead_quality }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead quality",
+              "displayName": "lead quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        720,
+        16
+      ],
+      "id": "943f99a5-967f-44ea-8191-ac9331c637fb",
+      "name": "Store Warm Leads",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs",
+          "mode": "list",
+          "cachedResultName": "AI Lead Qualifications",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1110965417,
+          "mode": "list",
+          "cachedResultName": "Cold",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit#gid=1110965417"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "service": "={{ $json.service }}",
+            "budget": "={{ $json.budget }}",
+            "urgency": "={{ $json.urgency }}",
+            "lead quality": "={{ $json.lead_quality }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead quality",
+              "displayName": "lead quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        720,
+        192
+      ],
+      "id": "fc75e8e5-377f-4d17-ac38-127ce3f675f3",
+      "name": "Store Cold Leads",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "godfreymfabon@gmail.com",
+        "subject": "WARM LEADS",
+        "emailType": "text",
+        "message": "=🔆 Warm LEAD ALERT\n\n👤 {{$json.name}}\n📧 {{$json.email}}\n📞 {{$json.phone}}\n\n🛠 {{$json.service}}\n\n💰 {{$json.budget}}\n\n⏰ {{$json.urgency}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        928,
+        16
+      ],
+      "id": "7e76e1f5-49cc-4c16-8756-2ca4c46ec173",
+      "name": "Send a message",
+      "webhookId": "920c0ccb-d5e8-4a63-85f4-a98db340ca25",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wcjkskYXTZZk9ZhE",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Store Hot Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Store Warm Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Store Cold Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Store Hot Leads": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Warm Leads": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3c584aef-0f96-4ab4-9730-474f243e029e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa555dda3243f347c9222650b19333761b362b0a6aee27052d51327e5374ae7b"
+  },
+  "nodeGroups": [],
+  "id": "W2AtkSlOOyUxFT4b",
+  "tags": []
+}
