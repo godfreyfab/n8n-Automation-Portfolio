@@ -1,0 +1,691 @@
+{
+  "name": "AI Lead Followup Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "881d0ca6-a79d-4407-bccb-afc690c2175d",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "ba05a3ba-3950-4356-859e-3d1cbb261e6f",
+      "name": "Webhook",
+      "webhookId": "881d0ca6-a79d-4407-bccb-afc690c2175d"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['lead quality'] }}",
+                    "rightValue": "Hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "df93d2fa-ea2c-4cd7-9f91-b39000b200ff"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f3a076ec-7476-4cc6-8f76-01a7a6d60b18",
+                    "leftValue": "={{ $json['lead quality'] }}",
+                    "rightValue": "Warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "14187455-956e-4bdc-be8e-ed47a24608c4",
+                    "leftValue": "={{ $json['lead quality'] }}",
+                    "rightValue": "Cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        -16
+      ],
+      "id": "84b39f9d-e295-4155-b94c-c46d5f6805a4",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs",
+          "mode": "list",
+          "cachedResultName": "AI Lead Qualifications",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1110965417,
+          "mode": "list",
+          "cachedResultName": "Cold",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit#gid=1110965417"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "service": "={{ $json.service }}",
+            "budget": "={{ $json.budget }}",
+            "urgency": "={{ $json.urgency }}",
+            "lead quality": "={{ $json.lead_quality }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead quality",
+              "displayName": "lead quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1056,
+        240
+      ],
+      "id": "7c75b001-2e0d-4bf3-afc1-6af380c0c3cc",
+      "name": "Store Cold Leads",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are an experienced sales representative writing a personalized follow-up email for a hot lead.\n\nA hot lead has demonstrated strong buying intent through signals such as a clear service request, budget, urgency, timeline, or readiness to proceed.\n\nYour objective is to help the lead take the next step without sounding aggressive, artificial, or overly enthusiastic.\n\nWriting requirements:\n- Write naturally, like a real person personally responding.\n- Address the customer by name when a name is available.\n- Refer naturally to the requested service.\n- Acknowledge their timeline or urgency when available.\n- Mention the budget only when it adds useful context. Do not unnecessarily repeat it.\n- Keep the message confident, helpful, and professional.\n- Encourage one clear next step, such as replying or scheduling a consultation.\n- Avoid generic phrases such as:\n  - \"I hope this message finds you well\"\n  - \"I can feel the urgency\"\n  - \"keep the momentum going\"\n  - \"exciting opportunity\"\n  - \"tailored solution\"\n- Do not exaggerate, guarantee results, or invent information.\n- Keep the email body between 70 and 130 words.\n- Do not add a sender signature because Gmail will handle the signature.\n- Do not include labels such as \"Subject:\" or \"Body:\" inside the values.\n- Do not use Markdown or code fences.\n-Use Godfrey as the sender of the Email and under it declare that im an AI Automation Specialist\nReturn only valid JSON using exactly this structure:\n\n{\n  \"subject\": \"\",\n  \"body\": \"\"\n}\n\nThe subject must:\n- Be concise and natural.\n- Be no longer than 60 characters.\n- Relate directly to the customer's inquiry.\n- Avoid clickbait and excessive punctuation.\n\nBoth subject and body are required and must never be empty."
+            },
+            {
+              "content": "=Generate a personalized followup nessage\n\nLead information\nName: {{ $json['name'] }}\nEmail: {{ $json['email'] }}\nService:{{ $json['service'] }}\nBudget:{{ $json['budget'] }}\nUrgency:{{ $json['urgency']}}\nReason: {{ $('Qualifications').item.json.reason }}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        -144
+      ],
+      "id": "113b5849-0abf-4991-a58e-64f2f1d83d96",
+      "name": "Hot Lead Messsage",
+      "credentials": {
+        "openAiApi": {
+          "id": "nnVARDasehZ2eXTL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "godfreymfabon@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -144
+      ],
+      "id": "ce3cd29c-a92e-4641-b80c-9341528066b4",
+      "name": "Hot Lead Email",
+      "webhookId": "8b2827e3-be86-4986-abe5-98264ad8a95b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wcjkskYXTZZk9ZhE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "godfreymfabon@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        48
+      ],
+      "id": "3e206008-c282-4fab-81a5-1b93405b0b1a",
+      "name": "Warm Lead Email1",
+      "webhookId": "8b2827e3-be86-4986-abe5-98264ad8a95b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wcjkskYXTZZk9ZhE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are an experienced sales representative writing a personalized follow-up email for a warm lead.\n\nA warm lead has shown genuine interest but may still need information, reassurance, or time before making a decision.\n\nYour objective is to build trust, answer the underlying interest, and encourage a low-pressure response.\n\nWriting requirements:\n- Write naturally, like a real person personally responding.\n- Address the customer by name when a name is available.\n- Mention the service they are exploring.\n- Acknowledge their question, need, or business problem when available.\n- Be useful and conversational rather than promotional.\n- Invite them to reply with questions or share more about their needs.\n- Do not pressure them to buy, schedule immediately, or make a commitment.\n- Mention budget or urgency only when it is relevant and explicitly provided.\n- Avoid generic phrases such as:\n  - \"I hope this message finds you well\"\n  - \"exciting opportunity\"\n  - \"tailored solution\"\n  - \"unlock your potential\"\n  - \"revolutionize your business\"\n- Do not exaggerate, guarantee results, or invent information.\n- Keep the email body between 80 and 140 words.\n- Do not add a sender signature because Gmail will handle the signature.\n- Do not include labels such as \"Subject:\" or \"Body:\" inside the values.\n- Do not use Markdown or code fences.\n- Use Godfrey as the name of the sender and my role which is an AI Automation Specialist\nReturn only valid JSON using exactly this structure:\n\n{\n  \"subject\": \"\",\n  \"body\": \"\"\n}\n\nThe subject must:\n- Be concise, friendly, and natural.\n- Be no longer than 60 characters.\n- Relate directly to the lead's interest.\n- Avoid clickbait and excessive punctuation.\n\nBoth subject and body are required and must never be empty."
+            },
+            {
+              "content": "=Generate a personalized followup nessage\n\nLead information\nName: {{ $json.name }}\nService:{{ $json.service }}\nBudget:{{ $json.budget }}\nUrgency:{{ $json.urgency }}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        48
+      ],
+      "id": "d36b0361-7718-44ee-a97f-a2a8879d3eed",
+      "name": "Warm Lead Message",
+      "credentials": {
+        "openAiApi": {
+          "id": "nnVARDasehZ2eXTL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs",
+          "mode": "list",
+          "cachedResultName": "AI Lead Qualifications",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 478126217,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17V1L-CPBN1XgzPbSiJD3KdaYsnRkcROYtX8XbbT5LWs/edit#gid=478126217"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "timestamp": "={{ $json.timestamp }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "service": "={{ $json.service }}",
+            "budget": "={{ $json.budget }}",
+            "urgency": "={{ $json.urgency }}",
+            "lead quality": "={{ $json.lead_quality }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead quality",
+              "displayName": "lead quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        0
+      ],
+      "id": "39ac8adc-6697-42cc-ac66-3eb714f8b664",
+      "name": "all leads",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $json.output?.[0]?.content?.[0]?.text;\n\nif (!rawText) {\n  throw new Error(\n    `Email AI returned no text. Received: ${JSON.stringify($json)}`\n  );\n}\n\nconst cleanedText = rawText\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet email;\n\ntry {\n  email = JSON.parse(cleanedText);\n} catch (error) {\n  throw new Error(`Email AI returned invalid JSON: ${rawText}`);\n}\n\nif (\n  typeof email.subject !== \"string\" ||\n  typeof email.body !== \"string\" ||\n  !email.subject.trim() ||\n  !email.body.trim()\n) {\n  throw new Error(\n    `Email AI did not return a valid subject and body: ${cleanedText}`\n  );\n}\n\nreturn [\n  {\n    json: {\n      subject: email.subject.trim(),\n      body: email.body.trim(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        -144
+      ],
+      "id": "d94dbac4-2319-40d9-be5f-3084ebc758e6",
+      "name": "Parse Hot Email"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $json.output?.[0]?.content?.[0]?.text;\n\nif (!rawText) {\n  throw new Error(\n    `Email AI returned no text. Received: ${JSON.stringify($json)}`\n  );\n}\n\nconst cleanedText = rawText\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet email;\n\ntry {\n  email = JSON.parse(cleanedText);\n} catch (error) {\n  throw new Error(`Email AI returned invalid JSON: ${rawText}`);\n}\n\nif (\n  typeof email.subject !== \"string\" ||\n  typeof email.body !== \"string\" ||\n  !email.subject.trim() ||\n  !email.body.trim()\n) {\n  throw new Error(\n    `Email AI did not return a valid subject and body: ${cleanedText}`\n  );\n}\n\nreturn [\n  {\n    json: {\n      subject: email.subject.trim(),\n      body: email.body.trim(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        48
+      ],
+      "id": "85a3f615-3dd1-4712-bf22-99c465621edc",
+      "name": "Parse Warm Email "
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI Lead Qualification Specialist.\n\nYour task is to analyze a customer's inquiry, extract the lead information, and classify the lead.\n\n## Lead Qualification Rules\n\n🔥 Hot\n- Customer clearly wants the service.\n- Mentions a budget, timeline, urgency, or asks to get started.\n- Shows strong buying intent.\n\n🟡 Warm\n- Customer is interested in the service.\n- Asks questions or wants more information.\n- May describe a business problem.\n- No clear budget or urgency.\n\n❄️ Cold\n- No clear buying intent.\n- Spam, test messages, greetings only, or insufficient information.\n\n## Extraction Rules\n\nExtract only information explicitly mentioned by the customer.\n\nNever invent:\n- Name\n- Email\n- Phone\n- Service\n- Budget\n\nIf information is missing, leave it as an empty string.\n\nUrgency must be one of:\n- High\n- Medium\n- Low\n- Unknown\n\nLead quality must be one of:\n- Hot\n- Warm\n- Cold\n\nThe reason field is REQUIRED.\n\nExplain in one concise sentence why the lead received that classification.\n\nReturn the response as a structured object using the workflow's required fields; \n\n{\n  \"name\": \"\",\n  \"email\": \"\",\n  \"phone\": \"\",\n  \"service\": \"\",\n  \"budget\": \"\",\n  \"urgency\": \"\",\n  \"lead_quality\": \"\",\n  \"reason\": \"\"\n}"
+            },
+            {
+              "content": "=Analyze this customer inquiry:\n\n{{ $('Webhook').item.json.body.message.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        0
+      ],
+      "id": "87d1bebc-3c62-4f55-affc-00abe666a796",
+      "name": "Qualifications",
+      "credentials": {
+        "openAiApi": {
+          "id": "nnVARDasehZ2eXTL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawContent = $json.output?.[0]?.content?.[0]?.text;\n\nif (!rawContent) {\n  throw new Error(\n    `OpenAI text was not found. Received: ${JSON.stringify($json)}`\n  );\n}\n\nconst cleanedContent = rawContent\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet lead;\n\ntry {\n  lead = JSON.parse(cleanedContent);\n} catch (error) {\n  throw new Error(`OpenAI returned invalid JSON: ${rawContent}`);\n}\n\n// Manila Time\nconst timestamp = new Date().toLocaleString(\"en-PH\", {\n  timeZone: \"Asia/Manila\",\n  year: \"numeric\",\n  month: \"2-digit\",\n  day: \"2-digit\",\n  hour: \"2-digit\",\n  minute: \"2-digit\",\n  second: \"2-digit\",\n  hour12: false,\n});\n\nreturn [\n  {\n    json: {\n      timestamp,\n      ...lead\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "82e6b09a-762f-4ad4-b2a0-ad3ac2396244",
+      "name": "Parse Json"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Qualifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead Messsage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Warm Lead Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Store Cold Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hot Lead Messsage": {
+      "main": [
+        [
+          {
+            "node": "Parse Hot Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warm Lead Message": {
+      "main": [
+        [
+          {
+            "node": "Parse Warm Email ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "all leads": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Warm Email ": {
+      "main": [
+        [
+          {
+            "node": "Warm Lead Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Hot Email": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualifications": {
+      "main": [
+        [
+          {
+            "node": "Parse Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Json": {
+      "main": [
+        [
+          {
+            "node": "all leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6d8c7680-3186-4ec0-bcff-8b87211d7771",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa555dda3243f347c9222650b19333761b362b0a6aee27052d51327e5374ae7b"
+  },
+  "nodeGroups": [],
+  "id": "p0LdCAYXBf15VbUv",
+  "tags": []
+}
