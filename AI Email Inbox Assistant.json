@@ -1,0 +1,495 @@
+{
+  "name": "AI Email Inbox Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -160,
+        -112
+      ],
+      "id": "e489b274-c16e-4df2-b24a-2b6eb2c358cb",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wcjkskYXTZZk9ZhE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an email signal extractor for an AI automation business.\n\nRead the incoming email carefully.\n\nDetermine these fields:\n\n1. is_sales_inquiry\ntrue if the sender is interested in our services or asks about our services.\n\n2. asks_for_meeting\ntrue ONLY if the sender explicitly asks for a call, meeting, demo, consultation, appointment, or scheduling.\n\n3. asks_for_information\ntrue if the sender asks for information, details, explanations, features, pricing, services offered, industries served, or how something works.\n\n4. requires_reply\ntrue if the sender asks a question or otherwise expects a response.\n\n5. sentiment\nMust be exactly one of:\n- Positive\n- Neutral\n- Negative\n\nUse:\n- Positive when the sender is interested, enthusiastic, appreciative, or optimistic.\n- Neutral when the message is factual or emotionally neutral.\n- Negative when the sender expresses frustration, dissatisfaction, anger, or disappointment.\n\n6. summary\nWrite one short sentence describing what the sender wants or why they emailed.\n\n7. suggested_action\nWrite one short practical next step for the inbox owner.\n\nImportant rules:\n- Use only information explicitly present in the email.\n- Do not invent a meeting, budget, complaint, urgency, or request.\n- Do not infer a meeting from general interest.\n- Keep summary and suggested_action concise.\n- Return ONLY valid JSON.\n- Do not use markdown or code fences.\n\nReturn exactly:\n\n{\n  \"is_sales_inquiry\": true or false,\n  \"asks_for_meeting\": true or false,\n  \"asks_for_information\": true or false,\n  \"requires_reply\": true or false,\n  \"sentiment\": \"Positive | Neutral | Negative\",\n  \"summary\": \"one short sentence\",\n  \"suggested_action\": \"one short practical action\"\n}"
+            },
+            {
+              "content": "=Analyze this email:\n\nSender:\n{{ $('Gmail Trigger').item.json.From }}\n\nSubject:\n{{ $('Gmail Trigger').item.json.Subject }}\n\nEmail:\n{{ $('Gmail Trigger').item.json.snippet }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        64,
+        -112
+      ],
+      "id": "b7792d13-7fdf-4cbe-8b8d-b03ab66d24fe",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nnVARDasehZ2eXTL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $json.output?.[0]?.content?.[0]?.text;\n\nif (!rawText) {\n  throw new Error(\"No AI output received.\");\n}\n\nconst ai = JSON.parse(rawText);\n\n// Helper\nfunction toBoolean(value) {\n  return value === true || String(value).toLowerCase() === \"true\";\n}\n\n// AI Signals\nconst isSalesInquiry = toBoolean(ai.is_sales_inquiry);\nconst asksForMeeting = toBoolean(ai.asks_for_meeting);\nconst asksForInformation = toBoolean(ai.asks_for_information);\nconst requiresReply = toBoolean(ai.requires_reply);\n\n// Category\nlet category = \"Other\";\n\nif (isSalesInquiry) {\n  category = \"Sales\";\n}\n\n// Priority\nlet priority = \"Low\";\n\nif (asksForMeeting) {\n  priority = \"High\";\n} else if (\n  isSalesInquiry ||\n  asksForInformation ||\n  requiresReply\n) {\n  priority = \"Medium\";\n}\n\n// Sentiment\nconst sentiment = ai.sentiment || \"Neutral\";\n\n// Summary\nconst summary = ai.summary || \"No summary generated.\";\n\n// Suggested Action\nconst suggestedAction =\n  ai.suggested_action ||\n  (requiresReply\n    ? \"Review and reply to the email.\"\n    : \"No action needed.\");\n\n// Gmail Data\nconst gmail = $(\"Gmail Trigger\").item.json;\n\n// Final Output\nreturn [\n  {\n    json: {\n      received_at: new Date().toISOString(),\n\n      message_id: gmail.id || \"\",\n      thread_id: gmail.threadId || \"\",\n\n      sender: gmail.From || \"\",\n      recipient: gmail.To || \"\",\n      subject: gmail.Subject || \"\",\n      email_preview: gmail.snippet || \"\",\n\n      category,\n      priority,\n      sentiment,\n      summary,\n      suggested_action: suggestedAction,\n\n      is_sales_inquiry: isSalesInquiry,\n      asks_for_meeting: asksForMeeting,\n      asks_for_information: asksForInformation,\n      requires_reply: requiresReply,\n\n      status: \"New\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -112
+      ],
+      "id": "a9b42505-1121-4d8e-bc89-e59a4aeeba39",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "High",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c0095d99-08d2-40fc-9897-6581a553b7a3"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8a4eb894-dd4f-4046-9cc6-e6c533592796",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "Medium",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c629123f-1a5f-47db-b640-be0d2d76301a",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "Low",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        -128
+      ],
+      "id": "1a11cac3-8bcc-47f5-ad0d-db428c2b5201",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "7530285170",
+        "text": "=🚨 HIGH PRIORITY EMAIL\n\nFrom:\n{{ $json.sender }}\n\nSubject:\n{{ $json.subject }}\n\nCategory:\n{{ $json.category}}\n\nSummary:\n{{ $json.summary }}\n\nSuggested Action:\n{{ $json.suggested_action }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        -288
+      ],
+      "id": "89a624cc-6463-43e2-8c3d-e8a28aea3792",
+      "name": "Send a text message",
+      "webhookId": "279bd55b-ad26-4877-a476-f07a004fd10e",
+      "credentials": {
+        "telegramApi": {
+          "id": "YS9k9xb8cjFziyWC",
+          "name": "Lead Followup"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=godfreysmith62@gmail.com",
+        "subject": "=Incoming Warm Lead!",
+        "emailType": "text",
+        "message": "=\nFrom: {{ $json.sender }}  \nSubject: {{ $json.subject }}  \nCategory: {{ $json.category}}  \nSummary: {{ $json.summary }}  \nSuggested Action: {{ $json.suggested_action }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -112
+      ],
+      "id": "e52faee6-0c6e-47a8-b032-0a0a1df8ebe6",
+      "name": "Send a message",
+      "webhookId": "4d383e9d-a157-4ee4-b307-d029913a7ad5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wcjkskYXTZZk9ZhE",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FgCj6ir6XDAsSJAxHGy5EgLlD8_-IrRK4Sf3YU0YLnc",
+          "mode": "list",
+          "cachedResultName": "AI Email Inbox Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FgCj6ir6XDAsSJAxHGy5EgLlD8_-IrRK4Sf3YU0YLnc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FgCj6ir6XDAsSJAxHGy5EgLlD8_-IrRK4Sf3YU0YLnc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "received_at": "={{ $json.received_at }}",
+            "message_id": "={{ $json.message_id}}",
+            "thread_id": "={{ $json.thread_id}}",
+            "sender": "={{ $json.sender }}",
+            "sender_email": "={{ $json.sender_email }}",
+            "recipient": "={{ $json.recipient }}",
+            "subject": "={{ $json.subject }}",
+            "email_preview": "={{ $json.email_preview }}",
+            "category": "={{ $json.category }}",
+            "priority": "={{ $json.priority }}",
+            "sentiment": "={{ $json.sentiment }}",
+            "summary": "={{ $json.summary }}",
+            "requires_reply": "={{ $json.requires_reply }}",
+            "suggested_action": "={{ $json.suggested_action }}",
+            "reason": "={{ $json.reason }}",
+            "status": "={{ $json.statusa }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender",
+              "displayName": "sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender_email",
+              "displayName": "sender_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recipient",
+              "displayName": "recipient",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_preview",
+              "displayName": "email_preview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requires_reply",
+              "displayName": "requires_reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "suggested_action",
+              "displayName": "suggested_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        -112
+      ],
+      "id": "76186270-1ab2-49fa-a83b-bdb8fee92a5b",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "d49ba0b0-2bb9-4fe5-99ea-cfe64ec3a93d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa555dda3243f347c9222650b19333761b362b0a6aee27052d51327e5374ae7b"
+  },
+  "nodeGroups": [],
+  "id": "mAm3RuVwAeJiVE7W",
+  "tags": []
+}
