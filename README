@@ -1,0 +1,201 @@
+Deliverable 4 – AI Email Inbox Assistant
+
+Overview
+
+The AI Email Inbox Assistant is an intelligent email management workflow built in n8n that automatically monitors incoming Gmail messages, analyzes them using OpenAI, prioritizes them based on urgency and intent, stores all email activity in Google Sheets, and sends real-time notifications for important emails.
+
+The system helps businesses reduce inbox clutter, identify sales opportunities faster, and focus on emails that require immediate attention.
+
+⸻
+
+Business Problem
+
+Businesses receive a large volume of emails every day, including:
+
+* Sales inquiries
+* Consultation requests
+* Information requests
+* Support questions
+* Newsletters and promotions
+
+Manually reviewing every email is time-consuming and increases the risk of missing important opportunities.
+
+This workflow automates email triage and prioritization using AI.
+
+⸻
+
+Features
+
+Gmail Monitoring
+
+Automatically detects new incoming emails using Gmail Trigger.
+
+AI Email Analysis
+
+OpenAI analyzes each email and extracts:
+
+* Sales Inquiry Detection
+* Meeting Request Detection
+* Information Request Detection
+* Reply Requirement Detection
+* Sentiment Analysis
+* Email Summary
+* Suggested Action
+
+Priority Classification
+
+High Priority
+
+* Meeting requests
+* Consultation requests
+* Demo requests
+
+Medium Priority
+
+* Sales inquiries
+* Information requests
+* Emails requiring a response
+
+Low Priority
+
+* Newsletters
+* Promotions
+* Non-actionable emails
+
+Sentiment Analysis
+
+Classifies emails as:
+
+* Positive
+* Neutral
+* Negative
+
+AI Summary
+
+Generates a concise summary of the email content.
+
+Suggested Action
+
+Provides a recommended next step for handling the email.
+
+Google Sheets Logging
+
+Stores all processed emails in a centralized database for tracking and reporting.
+
+Real-Time Notifications
+
+* High Priority → Telegram Alert
+* Medium Priority → Gmail Notification
+* Low Priority → Logged Only
+
+⸻
+
+Workflow Architecture
+Gmail Trigger
+      ↓
+OpenAI Analysis
+      ↓
+Code Node
+      ↓
+Google Sheets
+      ↓
+Switch
+
+High Priority
+ └── Telegram Alert
+
+Medium Priority
+ └── Gmail Notification
+
+Low Priority
+ └── Logged Only
+
+AI Output Example
+{
+  "is_sales_inquiry": true,
+  "asks_for_meeting": true,
+  "asks_for_information": false,
+  "requires_reply": true,
+  "sentiment": "Positive",
+  "summary": "A dental clinic is interested in AI lead management automation and wants to schedule a consultation.",
+  "suggested_action": "Reply with available consultation times."
+}
+
+Priority Logic
+
+High priority:
+asks_for_meeting = true
+
+Examples:
+
+* Consultation requests
+* Discovery calls
+* Demo requests
+* Appointment scheduling
+
+Medium priority:
+is_sales_inquiry = true
+
+OR
+
+asks_for_information = true
+
+OR
+
+requires_reply = true
+Examples:
+
+* Pricing inquiries
+* Service questions
+* Product information requests
+
+Low priority
+
+Conditions:
+No sales intent
+No meeting request
+No response required
+
+Examples:
+
+* Newsletters
+* Promotional emails
+* Marketing campaigns
+* Industry updates
+
+Technologies Used
+
+* n8n
+* OpenAI GPT-4o-mini
+* Gmail API
+* Google Sheets API
+* Telegram Bot API
+
+⸻
+
+Skills Demonstrated
+
+* AI Email Classification
+* Prompt Engineering
+* JSON Data Extraction
+* Workflow Automation
+* Conditional Routing
+* Gmail Integration
+* Google Sheets Integration
+* Telegram Integration
+* Lead Prioritization
+* Business Process Automation
+
+⸻
+
+Outcome
+
+The AI Email Inbox Assistant transforms a standard inbox into an AI-powered prioritization system capable of:
+
+* Identifying sales opportunities automatically
+* Prioritizing urgent conversations
+* Reducing inbox clutter
+* Improving response times
+* Creating a searchable email database
+* Delivering real-time alerts for high-value leads
+
