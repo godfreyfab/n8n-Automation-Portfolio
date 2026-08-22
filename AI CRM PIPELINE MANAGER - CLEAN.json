@@ -1,0 +1,725 @@
+{
+  "name": "AI CRM PIPELINE MANAGER",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "46d7bead-bca7-4ce7-9833-86dbd2f90c5b",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI CRM Lead Analyzer for a business.\n\nYour job is to analyze incoming customer or lead messages and return structured CRM data that can be used by an n8n automation.\n\nYou must determine:\n\n* lead quality\n* pipeline stage\n* customer intent\n* a short summary\n* the best next action\n* whether follow-up is required\n\nYou are NOT responsible for creating, updating, or deleting CRM records. You only analyze the message and recommend the appropriate CRM information.\n\nAllowed lead_quality values\n\nYou MUST return exactly one of:\n\n* Hot\n* Warm\n* Cold\n\nDefinitions:\n\nHot\n\n* Clearly interested in buying or booking\n* Requests a consultation, appointment, quote, proposal, or call\n* Shows strong buying intent\n* Has an urgent or near-term requirement\n\nWarm\n\n* Shows genuine interest\n* Asks about pricing, services, availability, features, or other buying-related information\n* May purchase later but is not yet ready to commit\n\nCold\n\n* Low or unclear buying intent\n* General inquiry with little commercial intent\n* Not interested\n* Spam, irrelevant, or unrelated inquiry\n\nAllowed pipeline_stage values\n\nYou MUST return exactly one of:\n\n* New Lead\n* Qualified\n* Contacted\n* Interested\n* Appointment Set\n* Won\n* Lost\n\nUse these definitions:\n\nNew Lead\nA new inquiry where buying intent is still unclear or has not yet been evaluated.\n\nQualified\nThe lead appears relevant to the business and could become a customer.\n\nContacted\nThere has already been communication with the lead, but they have not clearly expressed strong interest yet.\n\nInterested\nThe lead has clearly shown interest in purchasing, booking, receiving a quote, or discussing the service further.\n\nAppointment Set\nThe lead explicitly states that an appointment, meeting, call, consultation, or booking has already been scheduled or confirmed.\n\nDo NOT classify a lead as Appointment Set simply because they ask to book.\n\nWon\nThe customer clearly states that they have purchased, paid, signed, accepted the offer, or completed the deal.\n\nLost\nThe lead explicitly says they are not interested, have chosen another provider, want to cancel the sales process, or clearly do not want to proceed.\n\nIntent\n\nIdentify the primary intent of the message.\n\nExamples include:\n\n* Pricing Inquiry\n* Service Inquiry\n* Booking Request\n* Meeting Request\n* Purchase Intent\n* Follow-Up\n* General Inquiry\n* Not Interested\n* Complaint\n* Support Request\n* Other\n\nUse the most appropriate concise intent.\n\nSummary\n\nCreate a concise one-sentence summary of what the lead wants or communicated.\n\nDo not invent information.\n\nNext Action\n\nRecommend the most appropriate next business action.\n\nExamples:\n\n* Send pricing information\n* Offer consultation\n* Ask for preferred appointment date\n* Follow up within 24 hours\n* Send service details\n* Notify sales representative\n* Mark lead as lost\n* No immediate action\n\nrequires_followup\n\nReturn:\n\n* true if the business should respond or take another action\n* false if no response or action is necessary\n\nPipeline stage rules:\n\n- New Lead:\n  Use only when the message is a new inquiry AND the customer's intent or relevance to the business is still unclear.\n\n- Qualified:\n  Use when the lead clearly shows interest in a service the business actually offers, including pricing inquiries, service inquiries, availability questions, or requests for more information.\n\n- Interested:\n  Use when the lead shows stronger buying intent, such as wanting to proceed, requesting a quote, asking to book, asking for a consultation, or expressing readiness soon.\n\n- Appointment Set:\n  Use only when an appointment, consultation, meeting, or call has already been confirmed or scheduled.\n\n- Won:\n  Use only when the customer clearly states they have paid, purchased, signed, accepted, or completed the deal.\n\n- Lost:\n  Use only when the customer clearly states they do not want to proceed or chose another provider.\n\n\nImportant Rules\n\n1. Use only the allowed lead_quality values.\n2. Use only the allowed pipeline_stage values.\n3. Do not invent customer information.\n4. Do not assume an appointment is confirmed unless the message explicitly indicates that it has been scheduled.\n5. A booking request should normally be classified as Interested until the appointment is actually confirmed.\n6. A pricing inquiry should generally be Warm unless the overall message shows stronger buying intent.\n7. If the lead clearly wants to buy, book, schedule, or speak with sales soon, classify them as Hot.\n8. If information is unclear, choose the safest reasonable classification.\n9. Return ONLY valid JSON.\n10. Do not include markdown.\n11. Do not include ```json.\n12. Do not include explanations before or after the JSON.\n\nReturn exactly this JSON structure:\n\n{\n“lead_quality”: “Hot”,\n“pipeline_stage”: “Interested”,\n“intent”: “Booking Request”,\n“summary”: “Customer is interested in the service and wants to schedule a consultation.”,\n“next_action”: “Ask for their preferred appointment date and time.”,\n“requires_followup”: true\n}\n\nCRITICAL OUTPUT RULES:\n\nYou must ALWAYS return a valid JSON object.\n\nNever return:\n- explanations\n- conversational replies\n- markdown\n- code fences\n- text before the JSON\n- text after the JSON\n\nEven if the customer's message is short, vague, or a continuation of a previous conversation, you must still return the required JSON structure.\n\nYour response must begin with {\nand end with }\n\nExample valid response:\n\n{\n  \"lead_quality\": \"Hot\",\n  \"pipeline_stage\": \"Interested\",\n  \"intent\": \"Scheduling Availability\",\n  \"summary\": \"Customer states they are available on Friday.\",\n  \"next_action\": \"Confirm a suitable appointment time on Friday.\",\n  \"requires_followup\": true\n}"
+            },
+            {
+              "content": "=Analyze the following lead and return the required CRM JSON.\n\nTelegram User ID: {{ $json.body.message.from.id }}\n\nName: {{ $json.body.message.from.first_name || \"Unknown\" }} {{ $json.body.message.from.last_name || \"\" }}\n\nUsername: {{ $json.body.message.from.username || \"Unknown\" }}\n\nChat ID: {{ $json.body.message.chat.id }}\n\nCustomer Message:\n{{ $json.body.message.text || \"\" }}\n\nAnalyze the customer's actual message carefully.\n\nReturn ONLY the JSON object required by the system instructions."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "86cb9e23-d5b0-4aba-8c1c-07d920a916d6",
+      "name": "Message a model"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ==========================================\n// AI CRM Pipeline Manager\n// Parse + Validate AI Lead Analyzer Output\n// ==========================================\n\n// Get AI node output\nconst input = $input.first().json;\n\n// Get original Telegram webhook data\nconst webhook = $(\"Webhook\").first().json;\n\n// Telegram payload\nconst telegram = webhook.body || webhook;\n\nconst message = telegram.message || {};\nconst from = message.from || {};\nconst chat = message.chat || {};\n\n// ==========================================\n// 1. EXTRACT AI RESPONSE\n// ==========================================\n\nlet aiContent =\n  // n8n \"Message a model\" / Responses API structure\n  input.output?.[0]?.content?.[0]?.text ??\n\n  // Other possible OpenAI structures\n  input.choices?.[0]?.message?.content ??\n  input.message?.content ??\n  input.content?.[0]?.text ??\n  input.content ??\n  input.text ??\n  input.response;\n\n// If nothing was found, throw an error instead\n// of silently classifying the lead as Cold\nif (!aiContent) {\n  throw new Error(\n    `Could not find AI response. Raw AI output: ${JSON.stringify(input)}`\n  );\n}\n\n// ==========================================\n// 2. PARSE AI JSON\n// ==========================================\n\nlet parsed;\n\ntry {\n\n  // In case OpenAI already returned an object\n  if (typeof aiContent === \"object\") {\n    parsed = aiContent;\n  } else {\n\n    const cleaned = String(aiContent)\n      .replace(/```json/gi, \"\")\n      .replace(/```/g, \"\")\n      .trim();\n\n    parsed = JSON.parse(cleaned);\n  }\n\n} catch (error) {\n\n  throw new Error(\n    `AI response could not be parsed as JSON: ${aiContent}`\n  );\n}\n\n// ==========================================\n// 3. ALLOWED CRM VALUES\n// ==========================================\n\nconst allowedLeadQualities = [\n  \"Hot\",\n  \"Warm\",\n  \"Cold\"\n];\n\nconst allowedPipelineStages = [\n  \"New Lead\",\n  \"Qualified\",\n  \"Contacted\",\n  \"Interested\",\n  \"Appointment Set\",\n  \"Won\",\n  \"Lost\"\n];\n\n// ==========================================\n// 4. VALIDATE AI OUTPUT\n// ==========================================\n\nlet leadQuality = parsed.lead_quality;\nlet pipelineStage = parsed.pipeline_stage;\n\n// Instead of silently accepting bad AI output,\n// use safe CRM defaults\nif (!allowedLeadQualities.includes(leadQuality)) {\n  leadQuality = \"Cold\";\n}\n\nif (!allowedPipelineStages.includes(pipelineStage)) {\n  pipelineStage = \"New Lead\";\n}\n\n// ==========================================\n// 5. NORMALIZE requires_followup\n// ==========================================\n\nlet requiresFollowup = parsed.requires_followup;\n\nif (typeof requiresFollowup === \"string\") {\n  requiresFollowup =\n    requiresFollowup.toLowerCase() === \"true\";\n}\n\nif (typeof requiresFollowup !== \"boolean\") {\n  requiresFollowup = false;\n}\n\n// ==========================================\n// 6. MANILA TIMESTAMP\n// ==========================================\n\nconst timestamp = new Intl.DateTimeFormat(\"en-CA\", {\n  timeZone: \"Asia/Manila\",\n  year: \"numeric\",\n  month: \"2-digit\",\n  day: \"2-digit\",\n  hour: \"2-digit\",\n  minute: \"2-digit\",\n  second: \"2-digit\",\n  hour12: false\n})\n.format(new Date())\n.replace(\", \", \"T\");\n\n// ==========================================\n// 7. BUILD CLEAN CRM RECORD\n// ==========================================\n\nconst output = {\n\n  timestamp,\n\n  // Telegram identity\n  telegram_user_id: from.id || \"Unknown\",\n  chat_id: chat.id || \"Unknown\",\n\n  first_name: from.first_name || \"Unknown\",\n  last_name: from.last_name || \"\",\n  username: from.username || \"Unknown\",\n\n  // Customer message\n  message: message.text || \"\",\n\n  // AI CRM analysis\n  lead_quality: leadQuality,\n  pipeline_stage: pipelineStage,\n  intent: parsed.intent || \"Other\",\n  summary: parsed.summary || \"No summary provided\",\n  next_action: parsed.next_action || \"Review lead manually\",\n  requires_followup: requiresFollowup,\n\n  // CRM status\n  status:\n    pipelineStage === \"Won\"\n      ? \"Won\"\n      : pipelineStage === \"Lost\"\n      ? \"Lost\"\n      : \"Active\"\n};\n\n// ==========================================\n// 8. RETURN\n// ==========================================\n\nreturn [\n  {\n    json: output\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "5082a489-f4c1-4a4b-a3e9-c83bdfe6ef11",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dba694d4-95c4-4a4f-9246-d884109d6f45",
+              "leftValue": "={{ $json.telegram_user_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1072,
+        96
+      ],
+      "id": "bc9c6631-3680-4c0e-8bd2-87a46472e527",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REPLACE_WITH_GOOGLE_SHEET"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telegram_user_id",
+              "lookupValue": "={{ $('Code in JavaScript').item.json.telegram_user_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        0
+      ],
+      "id": "77f52e06-071c-4a3a-822f-7d5331b1cdea",
+      "name": "Find Lead",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REPLACE_WITH_GOOGLE_SHEET"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_user_id": "={{ $('Code in JavaScript').item.json.telegram_user_id }}",
+            "chat_id": "={{ $('Code in JavaScript').item.json.chat_id }}",
+            "first_name": "={{ $('Code in JavaScript').item.json.first_name }}",
+            "last_name": "={{ $('Code in JavaScript').item.json.last_name }}",
+            "username": "={{ $('Code in JavaScript').item.json.username }}",
+            "lead_quality": "={{ $('Code in JavaScript').item.json.lead_quality }}",
+            "pipeline_stage": "={{ $('Code in JavaScript').item.json.pipeline_stage }}",
+            "intent": "=  {{ $('Code in JavaScript').item.json.intent }}",
+            "summary": "={{ $('Code in JavaScript').item.json.summary }}",
+            "next_action": "={{ $('Code in JavaScript').item.jason.next_action }}",
+            "requires_followup": "={{ $('Code in JavaScript').item.json.requires_followup }}",
+            "status": "={{ $('Code in JavaScript').item.json.status }}",
+            "last_message": "={{ $('Code in JavaScript').item.json.message }}",
+            "last_contacted": "={{ $('Code in JavaScript').item.json.timestamp}}"
+          },
+          "matchingColumns": [
+            "telegram_user_id"
+          ],
+          "schema": [
+            {
+              "id": "telegram_user_id",
+              "displayName": "telegram_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "username",
+              "displayName": "username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_quality",
+              "displayName": "lead_quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pipeline_stage",
+              "displayName": "pipeline_stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requires_followup",
+              "displayName": "requires_followup",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_message",
+              "displayName": "last_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_contacted",
+              "displayName": "last_contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "13d4cb30-395f-423b-b570-00a14581875a",
+      "name": "UPDATE"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "REPLACE_WITH_GOOGLE_SHEET"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_user_id": "={{ $('Code in JavaScript').item.json.telegram_user_id }}",
+            "chat_id": "={{ $('Code in JavaScript').item.json.chat_id }}",
+            "first_name": "={{ $('Code in JavaScript').item.json.first_name }}",
+            "last_name": "={{ $('Code in JavaScript').item.json.last_name }}",
+            "username": "={{ $('Code in JavaScript').item.json.username }}",
+            "lead_quality": "={{ $('Code in JavaScript').item.json.lead_quality }}",
+            "pipeline_stage": "={{ $('Code in JavaScript').item.json.pipeline_stage }}",
+            "intent": "={{ $('Code in JavaScript').item.json.intent }}",
+            "summary": "={{ $('Code in JavaScript').item.json.summary }}",
+            "next_action": "={{ $('Code in JavaScript').item.json.next_action }}",
+            "requires_followup": "={{ $('Code in JavaScript').item.json.requires_followup }}",
+            "status": "={{ $('Code in JavaScript').item.json.status }}",
+            "last_message": "={{ $('Code in JavaScript').item.json.message }}",
+            "last_contacted": "={{ $('Code in JavaScript').item.json.timestamp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "telegram_user_id",
+              "displayName": "telegram_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "username",
+              "displayName": "username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_quality",
+              "displayName": "lead_quality",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pipeline_stage",
+              "displayName": "pipeline_stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requires_followup",
+              "displayName": "requires_followup",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_message",
+              "displayName": "last_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_contacted",
+              "displayName": "last_contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1280,
+        192
+      ],
+      "id": "d555cf39-1de9-4eff-953d-509c809cfce6",
+      "name": "APPEND"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Code in JavaScript').item.json.lead_quality }}",
+                    "rightValue": "Hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d11c05f9-c2ad-4ff3-b170-d34ce8fed24b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "68a6eb14-938b-4fae-841f-4bc8fa16487f",
+                    "leftValue": "={{ $('Code in JavaScript').item.json.lead_quality }}",
+                    "rightValue": "Warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0109710e-6277-4e38-bbd1-6fa276ca9486",
+                    "leftValue": "={{ $('Code in JavaScript').item.json.lead_quality }}",
+                    "rightValue": "Cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        80
+      ],
+      "id": "984a092c-9aed-4ed8-abd4-8d22528efd07",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "REPLACE_WITH_TELEGRAM_CHAT_ID",
+        "text": "=🔥 HOT LEAD ALERT\n\nName: {{ $('Code in JavaScript').item.json.first_name }}\nLead Quality: {{ $('Code in JavaScript').item.json.lead_quality }}\nPipeline Stage: {{ $('Code in JavaScript').item.json.pipeline_stage }}\n\nIntent:\n{{ $('Code in JavaScript').item.json.intent }}\n\nMessage:\n{{ $('Code in JavaScript').item.json.message }}\n\nAI Summary:\n{{ $('Code in JavaScript').item.json.summary }}\n\nRecommended Action:\n{{ $('Code in JavaScript').item.json.next_action }}\n\nLast Interaction:\n{{ $('Code in JavaScript').item.json.timestamp }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        -32
+      ],
+      "id": "cf49f67b-1088-4fca-a579-0b365180c2e7",
+      "name": "HOT"
+    },
+    {
+      "parameters": {
+        "chatId": "REPLACE_WITH_TELEGRAM_CHAT_ID",
+        "text": "=🟡 WARM LEAD — FOLLOW-UP NEEDED  \n\nName: {{ $('Code in JavaScript').item.json.first_name }}  \n\nIntent: {{ $('Code in JavaScript').item.json.intent }} \n\nSummary: {{ $('Code in JavaScript').item.json.summary }} \n\nSuggested Follow-Up: {{ $('Code in JavaScript').item.json.next_action }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        96
+      ],
+      "id": "d5695864-1946-4b0d-8cba-8eabfac6b352",
+      "name": "WARM"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Find Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "UPDATE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "APPEND",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Lead": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UPDATE": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "APPEND": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HOT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WARM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}
