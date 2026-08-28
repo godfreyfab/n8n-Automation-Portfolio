@@ -1,0 +1,2062 @@
+{
+  "name": "AI Appointment Booking & Follow up System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -224,
+        64
+      ],
+      "id": "3821cf87-39a9-4489-93ce-a90e116e4be5",
+      "name": "Webhook",
+      "webhookId": "07b3bd8b-f8d4-4b0f-a54c-eaa7bcc9a0dc"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI appointment scheduling assistant.\n\nYour job is to analyze incoming customer messages and determine what the customer wants to do with an appointment.\n\nYou DO NOT book, cancel, or reschedule appointments yourself. You only analyze the message and return structured information that the automation system can use.\n\nReturn ONLY valid JSON.\n\nIdentify the following fields:\n\n* intent: Must be exactly one of:\n    * \"book\"\n    * \"reschedule\"\n    * \"cancel\"\n    * \"check_availability\"\n    * \"appointment_question\"\n    * \"other\"\n* name: Customer’s name if provided. Otherwise \"Unknown\".\n* email: Customer’s email if provided. Otherwise \"Unknown\".\n* phone: Customer’s phone number if provided. Otherwise \"Unknown\".\n* service: Service or appointment type requested. Otherwise \"Unknown\".\n* requested_date: Requested appointment date in YYYY-MM-DD format if it can be confidently determined. Otherwise \"Unknown\".\n* requested_time: Requested appointment time in HH:MM 24-hour format if provided. Otherwise \"Unknown\".\n* appointment_id: Existing appointment ID if provided. Otherwise \"Unknown\".\n* reason: Short explanation of what the customer wants.\n* missing_information: An array containing information still required to complete the requested action.\n* requires_calendar_action: true if the request requires checking or modifying the calendar. Otherwise false.\n\nIntent classification rules:\n\n* \"book\" — The customer clearly wants to schedule a new appointment and has provided enough scheduling information to attempt booking.\n* \"check_availability\" — The customer asks whether a particular date/time is available, asks what appointment slots are available, or wants to book but required scheduling information is missing.\n* \"reschedule\" — The customer clearly wants to change the date or time of an existing appointment.\n* \"cancel\" — The customer clearly wants to cancel an existing appointment.\n* \"appointment_question\" — The customer is asking a question specifically about an appointment or the appointment process, but is NOT requesting a calendar change. Examples include:\n    * “How long does a dental cleaning appointment take?”\n    * “What should I bring to my appointment?”\n    * “How early should I arrive?”\n    * “Do I need to prepare anything before my appointment?”\n* \"other\" — The message is not about scheduling or managing an appointment. This includes general questions about prices, services, products, promotions, payment methods, business information, or unrelated topics.\n\nImportant distinction:\n\nA question about a service is NOT automatically an appointment question simply because the service can be booked.\n\nExamples:\n\n“How much does teeth whitening cost?”\n→ \"other\"\n\n“What teeth whitening services do you offer?”\n→ \"other\"\n\n“Do you accept credit cards?”\n→ \"other\"\n\n“How long does a teeth whitening appointment take?”\n→ \"appointment_question\"\n\n“Can I get teeth whitening tomorrow?”\n→ \"check_availability\"\n\n“I want to book teeth whitening tomorrow at 2 PM.”\n→ \"book\"\n\nAlways classify based on what the customer is trying to accomplish, not merely on whether they mention a bookable service.\nImportant rules:\n\n1. Never invent customer information.\n2. Never invent dates or times.\n3. Do not assume a missing date or time.\n4. If the customer uses a relative date such as “tomorrow”, “next Monday”, or “this Friday”, use the current date supplied in the user prompt to calculate the date.\n5. If the requested action cannot be completed because information is missing, list the missing fields in missing_information.\n6. Do not claim an appointment is available.\n7. Do not claim an appointment has been booked, cancelled, or rescheduled.\n8. Calendar availability and appointment changes are handled by the automation after your analysis.\n9. Return ONLY the JSON object with no markdown, code fences, or additional explanation."
+            },
+            {
+              "content": "=Analyze the following customer message and determine their appointment scheduling intent.\n\nCustomer ID:\n{{ $json.telegram_user_id }}\n\nCustomer name:\n{{ $json.name }}\n\nCustomer message:\n{{ $json.message }}\n\nCurrent date and time:\n{{ $json.timestamp }}\n\nExtract the appointment details from the customer’s message and return the result using the JSON structure defined in the system prompt.\n\nDo not assume or invent any missing information."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"intent\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"book\",\n        \"reschedule\",\n        \"cancel\",\n        \"check_availability\",\n        \"appointment_question\",\n        \"other\"\n      ]\n    },\n    \"name\": {\n      \"type\": \"string\"\n    },\n    \"email\": {\n      \"type\": \"string\"\n    },\n    \"phone\": {\n      \"type\": \"string\"\n    },\n    \"service\": {\n      \"type\": \"string\"\n    },\n    \"requested_date\": {\n      \"type\": \"string\"\n    },\n    \"requested_time\": {\n      \"type\": \"string\"\n    },\n    \"appointment_id\": {\n      \"type\": \"string\"\n    },\n    \"reason\": {\n      \"type\": \"string\"\n    },\n    \"missing_information\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"requires_calendar_action\": {\n      \"type\": \"boolean\"\n    }\n  },\n  \"required\": [\n    \"intent\",\n    \"name\",\n    \"email\",\n    \"phone\",\n    \"service\",\n    \"requested_date\",\n    \"requested_time\",\n    \"appointment_id\",\n    \"reason\",\n    \"missing_information\",\n    \"requires_calendar_action\"\n  ],\n  \"additionalProperties\": false\n}"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        64
+      ],
+      "id": "5d42f365-d381-422e-9056-47680c99fb9d",
+      "name": "Message a model",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "nnVARDasehZ2eXTL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cb9ea971-f633-4e87-8c40-d15441dc9bbc",
+              "name": "telegram_user_id",
+              "value": "={{ $json.body.message.from.id }}",
+              "type": "string"
+            },
+            {
+              "id": "07f57951-9dd6-4423-a8ff-6e31d8f5dedf",
+              "name": "name",
+              "value": "={{ (($json.body.message.from.first_name)+' '+$json.body.message.from.last_name)  }}",
+              "type": "string"
+            },
+            {
+              "id": "fb23a1f8-3e91-423c-8185-71b7ca6cf299",
+              "name": "message",
+              "value": "={{ $json.body.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "7ef31da7-3a9a-4afe-9a17-c9317b4d0494",
+              "name": "username",
+              "value": "={{ $json.body.message.username || \"Unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f1da05ab-215e-4319-b53c-9feac9194e88",
+              "name": "timestamp",
+              "value": "={{ $now.setZone('Asia/Manila').toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        64
+      ],
+      "id": "d446c087-0237-4cbd-97e7-2f82a5905384",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output[0].content[0].text.intent }}",
+                    "rightValue": "book",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e85f5c9a-e1f0-469f-a6c2-fd5e94cc0ebb"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e4b53fc6-19f1-42ed-9d24-29022afa9e43",
+                    "leftValue": "={{ $json.output[0].content[0].text.intent }}",
+                    "rightValue": "check_availability",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4065897a-cf04-4642-a43f-3fbfaa29f938",
+                    "leftValue": "={{ $json.output[0].content[0].text.intent }}",
+                    "rightValue": "reschedule",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "23cf9780-c131-458d-b2bd-484ceaf2d01e",
+                    "leftValue": "={{ $json.output[0].content[0].text.intent }}",
+                    "rightValue": "cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "948d357f-2b7b-4c16-96ab-e4aa3c1ccc93",
+                    "leftValue": "={{ $json.output[0].content[0].text.intent }}",
+                    "rightValue": "appointment_question",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1bf81df5-8e6c-4338-a469-bab5d965a42f",
+                    "leftValue": "={{ $json.output[0].content[0].text.intent }}",
+                    "rightValue": "other",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        0
+      ],
+      "id": "f0a4fc69-7adb-4f5a-a39b-04c659d6cdb1",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "godfreysmith62@gmail.com",
+          "mode": "list",
+          "cachedResultName": "godfreysmith62@gmail.com"
+        },
+        "start": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).toISO() }}",
+        "end": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).plus({ hours: 1 }).toISO() }}",
+        "additionalFields": {
+          "summary": "={{ 'Dental Appointment - ' + $('Edit Fields').item.json.name }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1408,
+        -992
+      ],
+      "id": "82720e21-b9d9-4a7f-9a0e-9412278876c3",
+      "name": "Create Appointment",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ku5jlDy4ddSA2it2",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "Your appointment was confirmed",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1808,
+        -992
+      ],
+      "id": "114052f5-b286-4611-bdd6-da2ebac13d5d",
+      "name": "Send Confirmation",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "I'm sorry but the slot isnt available",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        -752
+      ],
+      "id": "f116ad65-cc59-4e12-85cc-9310ee7c8964",
+      "name": "Slot Unavailable",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "What is the exact date and time?",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        -304
+      ],
+      "id": "4e445e23-93f4-46ae-8967-faa849408be7",
+      "name": "Ask Missing info",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0d9a7985-8b88-41fb-98fd-12a9c34fa0e5",
+              "leftValue": "={{ $('Message a model').item.json.output[0].content[0].text.requested_date }}",
+              "rightValue": "Unknown",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "e0f8f7e3-448b-45a5-a10c-e85ea609e822",
+              "leftValue": "={{ $('Message a model').item.json.output[0].content[0].text.requested_time }}",
+              "rightValue": "Unknown",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -512
+      ],
+      "id": "f2012729-51bf-463c-afd9-fd5dbc2f7aef",
+      "name": "Availability-Validate Date & Time"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "godfreysmith62@gmail.com",
+          "mode": "list",
+          "cachedResultName": "godfreysmith62@gmail.com"
+        },
+        "timeMin": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).toISO() }}",
+        "timeMax": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).plus({ hours: 1 }).toISO() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        -464
+      ],
+      "id": "30e07adb-2b5f-4a57-8f07-9c565de93e66",
+      "name": "Availability- Check Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ku5jlDy4ddSA2it2",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7b0fe031-af41-4fac-8547-e726bb9fcf8c",
+              "leftValue": "={{ $json.available }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        -464
+      ],
+      "id": "797496e7-699f-4ccf-ba7f-6c6fc5351eef",
+      "name": "Availability- Slot Available?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "=That slot is available!  {{ $('Message a model').item.json.output[0].content[0].text.requested_date }} at {{ $('Message a model').item.json.output[0].content[0].text.requested_time }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1568,
+        -480
+      ],
+      "id": "54ce414f-f258-4f70-a216-c81fb7b583e5",
+      "name": "Availability-Avail",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "I'm sorry but the slot isnt available",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1568,
+        -320
+      ],
+      "id": "8f79d59c-6a8b-4e4e-b3b9-a601493fc6a2",
+      "name": "Availability- Not Avail",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0d9a7985-8b88-41fb-98fd-12a9c34fa0e5",
+              "leftValue": "={{ $('Message a model').item.json.output[0].content[0].text.requested_date }}",
+              "rightValue": "Unknown",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "e0f8f7e3-448b-45a5-a10c-e85ea609e822",
+              "leftValue": "={{ $('Message a model').item.json.output[0].content[0].text.requested_time }}",
+              "rightValue": "Unknown",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        -784
+      ],
+      "id": "cfc9ab4b-af1d-4c3b-ad2f-a0206f99800b",
+      "name": "Book-Validate Date & Time"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "godfreysmith62@gmail.com",
+          "mode": "list",
+          "cachedResultName": "godfreysmith62@gmail.com"
+        },
+        "timeMin": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).toISO() }}",
+        "timeMax": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).plus({ hours: 1 }).toISO() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        -864
+      ],
+      "id": "08b937cd-bf26-4e62-826e-536415098006",
+      "name": "Book- Check Availability",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ku5jlDy4ddSA2it2",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c2ba8165-d211-4f23-a311-5bfdddba4fdf",
+              "leftValue": "={{ $json.available }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1296,
+        -864
+      ],
+      "id": "53f629f6-5d1a-4e7e-a263-170d9bb295ba",
+      "name": "Book-Slot Available?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "Provide the service that you want. Also the date and time",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        -704
+      ],
+      "id": "1915581f-3162-4dd6-ae26-968def46f825",
+      "name": "Book-Ask missing info",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4",
+          "mode": "list",
+          "cachedResultName": "AI Appointment Booking & Follow Up System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telegram_user_id",
+              "lookupValue": "={{ $('Edit Fields').item.json.telegram_user_id }}"
+            },
+            {
+              "lookupColumn": "appointment_status",
+              "lookupValue": "Booked"
+            },
+            {
+              "lookupColumn": "appointment_status",
+              "lookupValue": "Rescheduled"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        224
+      ],
+      "id": "f79d6c42-631d-45a8-b919-becdd130c28e",
+      "name": "Cancel-Look up Telegram ID",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "godfreysmith62@gmail.com",
+          "mode": "list",
+          "cachedResultName": "godfreysmith62@gmail.com"
+        },
+        "eventId": "={{ $('Cancel-Look up Telegram ID').item.json.appointment_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1392,
+        208
+      ],
+      "id": "b562a262-db6b-4e03-8bb1-a3a62f646935",
+      "name": "Delete an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ku5jlDy4ddSA2it2",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "Im sorry but there's no information about that appointment at all",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1392,
+        384
+      ],
+      "id": "b6866f8d-4dee-4a38-88d7-a5fb98db7926",
+      "name": "Appointment Doesnt Exist",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "Your appointment was now cancelled",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1760,
+        208
+      ],
+      "id": "1eb231c3-8a15-4557-abe3-f4d093f6d6ff",
+      "name": "Cancel Confirmation",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4",
+          "mode": "list",
+          "cachedResultName": "AI Appointment Booking & Follow Up System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "requires_calendar_action": "False",
+            "appointment_id": "={{ $('Cancel-Look up Telegram ID').item.json.appointment_id }}",
+            "appointment_status": "Cancelled"
+          },
+          "matchingColumns": [
+            "appointment_id"
+          ],
+          "schema": [
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "requested_date",
+              "displayName": "requested_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "requested_time",
+              "displayName": "requested_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "appointment_id",
+              "displayName": "appointment_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "missing_information",
+              "displayName": "missing_information",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "requires_calendar_action",
+              "displayName": "requires_calendar_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telegram_user_id",
+              "displayName": "telegram_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "appointment_status",
+              "displayName": "appointment_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        208
+      ],
+      "id": "6623f49b-ea01-49f6-a3b1-abc01364eb79",
+      "name": "Cancel-Update Appointment Status",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0d9a7985-8b88-41fb-98fd-12a9c34fa0e5",
+              "leftValue": "={{ $('Cancel-Look up Telegram ID').item.json.appointment_status }}",
+              "rightValue": "Cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "e0f8f7e3-448b-45a5-a10c-e85ea609e822",
+              "leftValue": "={{ $('Cancel-Look up Telegram ID').item.json.appointment_id }}",
+              "rightValue": "Unknown",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1168,
+        224
+      ],
+      "id": "d8dd25eb-2b02-4bdb-8aec-d8ecb0e64f3c",
+      "name": "Validate if the appointment Exist",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4",
+          "mode": "list",
+          "cachedResultName": "AI Appointment Booking & Follow Up System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telegram_user_id": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+            "intent": "={{ $('Message a model').item.json.output[0].content[0].text.intent }}",
+            "name": "={{ $('Message a model').item.json.output[0].content[0].text.name }}",
+            "email": "={{ $('Message a model').item.json.output[0].content[0].text.email }}",
+            "phone": "={{ $('Message a model').item.json.output[0].content[0].text.phone }}",
+            "service": "={{ $('Message a model').item.json.output[0].content[0].text.service }}",
+            "requested_date": "={{ $('Message a model').item.json.output[0].content[0].text.requested_date }}",
+            "requested_time": "={{ $('Message a model').item.json.output[0].content[0].text.requested_time }}",
+            "appointment_id": "={{ $json.id }}",
+            "reason": "={{ $('Message a model').item.json.output[0].content[0].text.reason }}",
+            "missing_information": "={{ $('Message a model').item.json.output[0].content[0].text.missing_information }}",
+            "requires_calendar_action": "={{ $('Message a model').item.json.output[0].content[0].text.requires_calendar_action }}",
+            "appointment_status": "Booked"
+          },
+          "matchingColumns": [
+            "telegram_user_id"
+          ],
+          "schema": [
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requested_date",
+              "displayName": "requested_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requested_time",
+              "displayName": "requested_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "appointment_id",
+              "displayName": "appointment_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "missing_information",
+              "displayName": "missing_information",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requires_calendar_action",
+              "displayName": "requires_calendar_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telegram_user_id",
+              "displayName": "telegram_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "appointment_status",
+              "displayName": "appointment_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1616,
+        -992
+      ],
+      "id": "020365e3-ba52-45a9-be21-afffc9cf744f",
+      "name": "Append Or Update Row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4",
+          "mode": "list",
+          "cachedResultName": "AI Appointment Booking & Follow Up System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telegram_user_id",
+              "lookupValue": "={{ $('Edit Fields').item.json.telegram_user_id }}"
+            },
+            {
+              "lookupColumn": "appointment_status",
+              "lookupValue": "Booked"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        -80
+      ],
+      "id": "b570c8c1-0ef1-4741-9484-eb20e31cb28b",
+      "name": "Update-Look up Telegram ID",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1a6ee48d-51c7-49b5-b015-a45adb0259d6",
+              "leftValue": "={{ $json.appointment_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2c00dda6-897f-4a11-aa75-2b2a1d9647ff",
+              "leftValue": "appointment_status",
+              "rightValue": "Booked",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        -128
+      ],
+      "id": "4507df4c-9473-4a07-a70e-40c3d0e905c0",
+      "name": "If",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4",
+          "mode": "list",
+          "cachedResultName": "AI Appointment Booking & Follow Up System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wTvKgsyOlQ3mmr_L6mNqBYcX0hsDWnlJwkZRkUyrrl4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "appointment_id": "={{ $('Update-Look up Telegram ID').item.json.appointment_id }}",
+            "intent": "={{ $('Update-Look up Telegram ID').item.json.intent }}",
+            "name": "={{ $('Update-Look up Telegram ID').item.json.name }}",
+            "email": "={{ $('Update-Look up Telegram ID').item.json.email }}",
+            "phone": "={{ $('Update-Look up Telegram ID').item.json.phone }}",
+            "service": "={{ $('Update-Look up Telegram ID').item.json.service }}",
+            "requested_date": "={{ $('Update-Look up Telegram ID').item.json.requested_date }}",
+            "requested_time": "={{ $('Update-Look up Telegram ID').item.json.requested_time }}",
+            "reason": "={{ $('Update-Look up Telegram ID').item.json.reason }}",
+            "missing_information": "={{ $('Update-Look up Telegram ID').item.json.missing_information }}",
+            "requires_calendar_action": "={{ $('Update-Look up Telegram ID').item.json.requires_calendar_action }}",
+            "telegram_user_id": "={{ $('Update-Look up Telegram ID').item.json.telegram_user_id }}",
+            "appointment_status": "=Booked"
+          },
+          "matchingColumns": [
+            "appointment_id"
+          ],
+          "schema": [
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requested_date",
+              "displayName": "requested_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requested_time",
+              "displayName": "requested_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "appointment_id",
+              "displayName": "appointment_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "missing_information",
+              "displayName": "missing_information",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "requires_calendar_action",
+              "displayName": "requires_calendar_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telegram_user_id",
+              "displayName": "telegram_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "appointment_status",
+              "displayName": "appointment_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1728,
+        -160
+      ],
+      "id": "e35e31e5-3fd5-4fbc-88ca-96372dbd4270",
+      "name": "Update Fields",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "u50yuB5LjR8KYk8h",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "Your appointment is not existing",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        16
+      ],
+      "id": "b3540cc3-e71f-4d5b-87c3-bd5cc1f886d3",
+      "name": "Update-no Match",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "godfreysmith62@gmail.com",
+          "mode": "list",
+          "cachedResultName": "godfreysmith62@gmail.com"
+        },
+        "timeMin": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).toISO() }}",
+        "timeMax": "={{ DateTime.fromISO(\n  $('Message a model').item.json.output[0].content[0].text.requested_date\n  + 'T' +\n  $('Message a model').item.json.output[0].content[0].text.requested_time,\n  { zone: 'Asia/Manila' }\n).plus({ hours: 1 }).toISO() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1360,
+        -144
+      ],
+      "id": "38fbbb88-1478-415a-8746-9b543c48938f",
+      "name": "Update-Availability Check",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "ku5jlDy4ddSA2it2",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7b0fe031-af41-4fac-8547-e726bb9fcf8c",
+              "leftValue": "={{ $json.available }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1536,
+        -144
+      ],
+      "id": "a6d01f25-df7b-4cf6-af52-5b81bd2cbba6",
+      "name": "Update- Slot Available?1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "Your appointment has been rescheduled",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1904,
+        -160
+      ],
+      "id": "65415e8f-96d7-439e-b18b-2256e5d55651",
+      "name": "Update-Match",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "That time is not available",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1728,
+        16
+      ],
+      "id": "25cf2860-a92e-4f80-a683-ccce9a64b950",
+      "name": "Update-Date not available",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a helpful appointment assistant for a clinic.\n\nThe customer is asking a general question related to appointments, services, pricing, clinic policies, preparation, duration, location, or other clinic-related information.\n\nAnswer the customer's question clearly, naturally, and concisely.\n\nRules:\n- Do not create, cancel, or reschedule an appointment.\n- Do not claim that a specific appointment time is available.\n- If the customer asks about actual availability, tell them you can check available appointment times.\n- Only provide information contained in the clinic information below.\n- If the answer is not available in the provided information, say that you don't have that information and offer to connect them with clinic staff.\n- Do not invent prices, services, schedules, policies, or clinic information.\n\nCLINIC INFORMATION:\nClinic Name: Bright Smile Dental Clinic\n\nServices:\n\n- Dental consultation: ₱500\n\n- Teeth cleaning: ₱1,000\n\n- Teeth whitening: ₱5,000\n\nBusiness Hours:\n\nMonday-Friday: 9:00 AM-6:00 PM\n\nSaturday: 9:00 AM-3:00 PM\n\nSunday: Closed\n\nAppointment duration:\n\nConsultation: approximately 30 minutes\n\nCleaning: approximately 45 minutes\n\nWhitening: approximately 60 minutes\n\nPatients should arrive 10 minutes before their scheduled appointment."
+            },
+            {
+              "content": "={{ $('Edit Fields').item.json.message }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        656
+      ],
+      "id": "3f8ce556-c2f0-4f07-8379-f70d67007fea",
+      "name": "Message a model1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "nnVARDasehZ2eXTL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "={{ $json.output[0].content[0].text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        656
+      ],
+      "id": "8aea4993-dd9a-494a-966d-bd675eed8e24",
+      "name": "AI Response",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a friendly virtual assistant for a clinic.\n\nThe customer's message does not match a booking, rescheduling, cancellation, availability check, or appointment-related question.\n\nRespond naturally and briefly.\n\nYour main purpose is to help customers with:\n- Booking an appointment\n- Checking appointment availability\n- Rescheduling an appointment\n- Cancelling an appointment\n- Answering clinic and appointment-related questions\n\nIf the message is a greeting, respond politely and ask how you can help.\n\nIf the request is outside your supported capabilities, politely explain what you can help with.\n\nDo not invent clinic information.\nDo not claim an appointment was booked, cancelled, or rescheduled.\nDo not claim a time slot is available without the calendar availability workflow.\nKeep responses concise.\n\nCLINIC INFORMATION:\nClinic Name: Bright Smile Dental Clinic\n\nServices:\n\n- Dental consultation: ₱500\n\n- Teeth cleaning: ₱1,000\n\n- Teeth whitening: ₱5,000\n\nBusiness Hours:\n\nMonday-Friday: 9:00 AM-6:00 PM\n\nSaturday: 9:00 AM-3:00 PM\n\nSunday: Closed\n\nAppointment duration:\n\nConsultation: approximately 30 minutes\n\nCleaning: approximately 45 minutes\n\nWhitening: approximately 60 minutes\n\nPatients should arrive 10 minutes before their scheduled appointment."
+            },
+            {
+              "content": "={{ $('Edit Fields').item.json.message }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        944
+      ],
+      "id": "994510d5-12f1-4abc-8565-f9b5c9d271f3",
+      "name": "Message a model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "nnVARDasehZ2eXTL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Edit Fields').item.json.telegram_user_id }}",
+        "text": "={{ $json.output[0].content[0].text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1168,
+        944
+      ],
+      "id": "90a904b6-3888-4c66-b1e0-8009bae7d121",
+      "name": "AI Response1",
+      "webhookId": "2b7f1992-452d-4903-b64d-98577c516145",
+      "credentials": {
+        "telegramApi": {
+          "id": "K7hLbKwihavUpIGD",
+          "name": "AI-CRM-PIPELINE"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Book-Validate Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Availability-Validate Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update-Look up Telegram ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cancel-Look up Telegram ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Appointment": {
+      "main": [
+        [
+          {
+            "node": "Append Or Update Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Availability-Validate Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Availability- Check Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask Missing info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Availability- Check Calendar": {
+      "main": [
+        [
+          {
+            "node": "Availability- Slot Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Availability- Slot Available?": {
+      "main": [
+        [
+          {
+            "node": "Availability-Avail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Availability- Not Avail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book-Validate Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Book- Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Book-Ask missing info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book- Check Availability": {
+      "main": [
+        [
+          {
+            "node": "Book-Slot Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book-Slot Available?": {
+      "main": [
+        [
+          {
+            "node": "Create Appointment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slot Unavailable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel-Look up Telegram ID": {
+      "main": [
+        [
+          {
+            "node": "Validate if the appointment Exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event": {
+      "main": [
+        [
+          {
+            "node": "Cancel-Update Appointment Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation": {
+      "main": [
+        []
+      ]
+    },
+    "Cancel Confirmation": {
+      "main": [
+        []
+      ]
+    },
+    "Validate if the appointment Exist": {
+      "main": [
+        [
+          {
+            "node": "Delete an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Appointment Doesnt Exist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Or Update Row": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel-Update Appointment Status": {
+      "main": [
+        [
+          {
+            "node": "Cancel Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update-Look up Telegram ID": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update-Availability Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update-no Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Fields": {
+      "main": [
+        [
+          {
+            "node": "Update-Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Appointment Doesnt Exist": {
+      "main": [
+        []
+      ]
+    },
+    "Update- Slot Available?1": {
+      "main": [
+        [
+          {
+            "node": "Update Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update-Date not available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update-Availability Check": {
+      "main": [
+        [
+          {
+            "node": "Update- Slot Available?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "AI Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "eef19f20-bd61-4636-a27e-9c72af095ab9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aa555dda3243f347c9222650b19333761b362b0a6aee27052d51327e5374ae7b"
+  },
+  "nodeGroups": [],
+  "id": "43n5KlFC4oNLue90",
+  "tags": []
+}
