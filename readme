@@ -1,0 +1,337 @@
+AI Appointment Scheduling System
+
+An AI-powered appointment scheduling workflow built with n8n, OpenAI, Telegram, Google Calendar, and Google Sheets.
+
+The system analyzes customer messages, identifies appointment-related intent, checks calendar availability, and routes the request to the appropriate scheduling action.
+
+This project was built as Deliverable 7 of my AI Automation portfolio.
+
+⸻
+
+Overview
+
+The workflow allows customers to interact with an appointment scheduling system using natural language instead of forms or predefined commands.
+
+Example:
+
+Customer:
+
+Hi, I’d like to book a dental cleaning on September 10 at 2 PM.
+
+The system extracts the appointment information, checks the requested time against Google Calendar, and proceeds only when the slot is available.
+
+⸻
+
+Tech Stack
+
+* n8n — Workflow automation and orchestration
+* OpenAI — Intent classification and appointment information extraction
+* Telegram — Customer messaging interface
+* Google Calendar — Appointment availability and event management
+* Google Sheets — Appointment records and event ID storage
+
+⸻
+
+Workflow Architecture
+
+Telegram / Webhook
+        ↓
+Edit Fields
+        ↓
+OpenAI Appointment Analyzer
+        ↓
+Switch
+        │
+        ├── Book
+        │     ↓
+        │   Validate Date & Time
+        │     ↓
+        │   Check Calendar Availability
+        │     ↓
+        │   Available?
+        │    ├── Yes → Create Event → Confirmation
+        │    └── No  → Unavailable Notification
+        │
+        ├── Check Availability
+        │     ↓
+        │   Validate Date & Time
+        │     ↓
+        │   Check Google Calendar
+        │     ↓
+        │   Return Availability
+        │
+        ├── Reschedule
+        │     ↓
+        │   Find Existing Appointment
+        │     ↓
+        │   Check New Slot
+        │     ↓
+        │   Update Appointment
+        │
+        ├── Cancel
+        │     ↓
+        │   Find Existing Appointment
+        │     ↓
+        │   Cancel Calendar Event
+        │
+        ├── Appointment Question
+        │     ↓
+        │   Send Appropriate Response
+        │
+        └── Other
+              ↓
+            Fallback / General Inquiry Response
+
+⸻
+
+Supported Intents
+
+The AI analyzes each incoming message and classifies it into one of six routes:
+
+Book
+
+Handles customers who want to create a new appointment.
+
+Example:
+
+I’d like to book a dental cleaning on September 10 at 2 PM.
+
+Before creating the appointment, the workflow checks Google Calendar to prevent conflicting bookings.
+
+Check Availability
+
+Handles customers asking whether a particular appointment slot is available.
+
+Example:
+
+Is September 10 at 3 PM available for teeth whitening?
+
+This route only checks availability and does not automatically create an appointment.
+
+Reschedule
+
+Handles requests to move an existing appointment to a new date or time.
+
+Example:
+
+Can you move my appointment to September 12 at 4 PM?
+
+The new time is checked for availability before the existing appointment is modified.
+
+Cancel
+
+Handles customers who want to cancel an existing appointment.
+
+Example:
+
+Please cancel my dental cleaning appointment.
+
+The workflow identifies the existing appointment and uses its Google Calendar Event ID to cancel the correct event.
+
+Appointment Question
+
+Handles questions specifically related to an appointment or the appointment process.
+
+Example:
+
+How long does a dental cleaning appointment usually take?
+
+Other
+
+Handles messages that do not require appointment scheduling actions.
+
+Example:
+
+How much does teeth whitening cost?
+
+General service, pricing, payment, and unrelated questions are kept separate from appointment-management requests.
+
+⸻
+
+AI Structured Output
+
+OpenAI converts natural-language messages into structured data that n8n can use for routing and scheduling.
+
+Example:
+
+{
+  "intent": "book",
+  "name": "John Doe",
+  "email": "Unknown",
+  "phone": "Unknown",
+  "service": "dental cleaning",
+  "requested_date": "2026-09-10",
+  "requested_time": "14:00",
+  "appointment_id": "Unknown",
+  "reason": "Customer wants to schedule a dental cleaning.",
+  "missing_information": [],
+  "requires_calendar_action": true
+}
+
+Structured output makes the AI response predictable and allows downstream n8n nodes to reference individual fields reliably.
+
+⸻
+
+Appointment Availability
+
+Appointments are configured with a one-hour duration.
+
+For example, a customer requesting:
+
+September 10 at 2:00 PM
+
+results in an availability check for:
+
+Start: 2026-09-10 14:00
+End:   2026-09-10 15:00
+
+The workflow checks this exact period against Google Calendar before creating the event.
+
+If the slot is occupied, the workflow does not create another event.
+
+⸻
+
+Input Validation
+
+The workflow does not rely solely on AI classification.
+
+Before Calendar operations are performed, required scheduling information is validated.
+
+For example:
+
+requested_date != "Unknown"
+AND
+requested_time != "Unknown"
+
+If required information is missing, the workflow asks the customer for the missing details instead of sending invalid data to Google Calendar.
+
+This prevents incomplete appointment requests from causing Calendar API errors.
+
+⸻
+
+Appointment Tracking
+
+Google Calendar acts as the source of truth for the actual schedule.
+
+Google Sheets can be used as an appointment lookup and tracking layer.
+
+Example fields:
+
+telegram_user_id
+name
+username
+service
+requested_date
+requested_time
+event_id
+appointment_status
+last_action
+
+When Google Calendar creates an appointment, the returned Event ID is stored with the customer’s appointment record.
+
+This allows the workflow to identify the correct Calendar event when processing cancellations or rescheduling requests.
+
+⸻
+
+Example Test Cases
+
+Branch	Example Input	Expected Result
+Book	Book a dental cleaning on September 10 at 2 PM.	Check availability and create event if available
+Book Conflict	Book a dental cleaning on September 10 at 2 PM.	Reject if the slot is already occupied
+Availability	Is September 11 at 3 PM available?	Return availability without booking
+Reschedule	Move my appointment to September 12 at 4 PM.	Check new slot and update appointment
+Cancel	Please cancel my appointment.	Find and cancel existing event
+Appointment Question	How long does a cleaning appointment take?	Route to appointment question
+Other	How much does teeth whitening cost?	Route to general inquiry
+
+⸻
+
+Key Features
+
+* Natural-language appointment requests
+* AI intent classification
+* Structured JSON extraction
+* Dynamic date and time extraction
+* Relative-date interpretation
+* Google Calendar availability checking
+* Double-booking prevention
+* One-hour appointment scheduling
+* Appointment creation
+* Appointment rescheduling
+* Appointment cancellation
+* Google Calendar Event ID tracking
+* Missing-information validation
+* Telegram confirmations and notifications
+* Separation of scheduling and general inquiries
+
+⸻
+
+Error Prevention
+
+Several safeguards are included in the workflow:
+
+Missing scheduling information
+
+Calendar operations are not executed when the required date or time is unavailable.
+
+Double bookings
+
+The requested time range is checked before a new Calendar event is created.
+
+AI hallucination
+
+The AI is instructed not to invent missing dates, times, customer information, appointment IDs, or Calendar availability.
+
+Calendar Event IDs
+
+Google Calendar generates the Event ID. The AI does not generate or guess Event IDs.
+
+General inquiries
+
+Questions about pricing, services, and payment are prevented from unnecessarily triggering Calendar operations.
+
+⸻
+
+What I Learned
+
+This project helped me practice:
+
+* Designing multi-branch n8n workflows
+* Integrating AI with deterministic automation logic
+* Using structured OpenAI outputs
+* Working with Google Calendar
+* Checking time-slot availability
+* Handling date/time and timezone data
+* Preventing scheduling conflicts
+* Validating AI-generated data before API operations
+* Managing appointment state
+* Using external IDs to update existing records
+* Separating AI reasoning from business logic
+
+One of the main lessons from this project was that AI should interpret the customer’s request, while deterministic workflow logic should control actions such as availability checks, event creation, cancellation, and record updates.
+
+⸻
+
+Possible Future Improvements
+
+Future versions could include:
+
+* Automatic alternative-slot suggestions
+* Configurable appointment durations based on service
+* Business-hour validation
+* Multiple staff calendars
+* Automated appointment reminders
+* No-show tracking
+* Confirmation and reminder emails
+* Customer appointment history
+* Web or Messenger integration
+* Human handoff for unsupported requests
+* Integration with a dedicated CRM
+
+⸻
+
+Disclaimer
+
+This project is a portfolio/demo automation created for learning and demonstration purposes.
+
+Credentials, API keys, access tokens, customer information, and other sensitive data are excluded from the public repository.
